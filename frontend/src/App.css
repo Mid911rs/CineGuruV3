@@ -1,24 +1,44 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
+
 body {
     font-family: 'Poppins', sans-serif;
-    background-image: url('/background_hive.jpg');
+   
+     
+}
+
+/* background-image: url('/background_movies.jpg');
     background-repeat: no-repeat;
-    background-size: 100%;
+    background-size: cover;
     background-attachment: fixed;
+    backdrop-filter: blur(0px);*/
+
+body::before {
+  
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('/background_movies.jpg');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  filter: blur(4px);
+  z-index: -1;
 }
 
 .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px;
-    background-color: rgb(248, 248, 248); /* Color corregido y con transparencia */
+    padding: 60px;
+    background-color: rgb(241, 227, 227); 
     box-shadow: 0 0 10px rgba(3, 83, 46, 0.1);
-    border-radius: 10px; /* Agrega bordes redondeados */
-    transition: background-color 0.3s ease; /* Transición suave para el color */
-    
-}
+    border-radius: 10px; 
+    transition: background-color 0.3s ease; 
+    }
 
 .title{
     color: rgb(255, 255, 255);
@@ -60,6 +80,7 @@ body {
     gap: 30px;
     flex-wrap: wrap;
     justify-content: center;
+    
 }
 
 .user-menu {
@@ -75,6 +96,8 @@ body {
 
 .user-menu span {
     margin-right: 20px;
+    
+    
 }
 
 .item-movie {
@@ -84,6 +107,7 @@ body {
     border-radius: 15px;
     display: flex;
     align-items: flex-end;
+    box-Shadow: 0 0 10px 15px rgba(43, 9, 12, 0.9);
 }
 .item-movie:hover > .info {
     color: #fff;
@@ -126,18 +150,21 @@ body {
     border-radius: 15px 0px 0px 15px;
     outline: none;
     border: 0;
+    box-Shadow: 0 0 15px 15px rgba(43, 9, 12, 0.9)
 }
 .form-search input[type="submit"] {
     font-size: 20px;
     padding: 12px 18px;
     border-radius: 0px 15px 15px 0px;
-    background-color: #000;
+    background-color: #851f68;
     color: #fff;
     border: 0;
     cursor: pointer;
+    
+
 }
 .form-search input[type="submit"]:hover {
-    background-color: #483f3f;
+    background-color: #d4680f;
 }
 
 .App {
@@ -151,6 +178,7 @@ body {
 
 /*/////////////////////////////////////////////////////////////////////////////////////////////////////*/
 /* single movie */
+
 .single-movie {
     display: flex;
     gap: 25px;
@@ -160,7 +188,7 @@ body {
 .single-movie .single-info {
     width: 600px;
     text-align: left;
-    background-color: #ffffff9e;
+    background-color: #ffffffe5;
     padding: 13px 25px;
     border-radius: 15px;
 }
@@ -320,7 +348,7 @@ body {
     align-items: center;
     padding: 10px;
     
-    background-color: #333;
+    background-color: Rgb (249,233,222);
   }
   .logo {
     text-decoration: none;
@@ -336,7 +364,7 @@ body {
   }
 
   .inicio_sesion{    
-    color: white;
+    color: rgb(47, 7, 85);
     text-decoration: none;
     margin-left: 10px;
     margin-right: 60px;
@@ -349,8 +377,8 @@ body {
 .cerrar_sesion{    
     border: none;
     background: none;
-    color: white; /* Color del texto */
-    font-size: 16px; /* Tamaño del texto */
+    color: rgb(47, 7, 85);
+    font-size: 16px; 
     cursor: pointer;
     font-weight: 400;
     margin-left: 115px;
@@ -358,11 +386,11 @@ body {
 }
 
 .cerrar_sesion:hover{
-  color: rgb(13, 215, 230);
+  color: rgb(78, 13, 230);
 }
 
   .favoritos_nav{    
-    color: white;
+    color: rgb(47, 7, 85);
     text-decoration: none;
     margin-left: 10px;
     text-decoration: none;
@@ -373,14 +401,10 @@ body {
     color:  rgb(13, 215, 230);
   }
 
-  .bienvenido_nav{    
-    color: white;
-    text-decoration: none;
-  }
 
 
   .user_favoritos{
-    color: white;
+    color: rgb(47, 7, 85);
     text-decoration: none;
     margin-left: 80px;
     
@@ -392,14 +416,14 @@ body {
   .user_menu {
     display: flex;
     align-items: center;
-    text-decoration: none;
-    color: white;
+    
+    color: rgb(47, 7, 85);
   }
   
   /*//////////////////////////////////////////////////////////////////////////////////////////////////*/
   /* Estilos para los elementos dentro de user-menu */
   .user_menu > * {
-    color: white;
+    color: rgb(47, 7, 85);
     text-decoration: none;
     margin-left: 150px;
   }
@@ -416,10 +440,11 @@ body {
     padding:16px 20px;
     border-top-right-radius: 20px;
     border-bottom-right-radius: 20px;
-    background-color: #007bff;
+    background-color: rgb(47, 7, 85);
     color: white;
     border: none;
     cursor: pointer;
+    box-Shadow: 0 0 10px 5px rgba(43, 9, 12, 0.9)
   }
   
   .form-control {
@@ -432,6 +457,8 @@ body {
     border: none;
     cursor: pointer;
     margin-left: 10px;
+    box-Shadow: 0 0 10px 5px rgba(43, 9, 12, 0.9)
+    
   }
 
   .menu_buscar{

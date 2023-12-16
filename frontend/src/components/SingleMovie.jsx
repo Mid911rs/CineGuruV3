@@ -14,25 +14,33 @@ import Telegram from 'bootstrap-icons/icons/telegram.svg';
 
 import DefaultImage from "/NoImage.png"
 
+/**
+ * detalles de películas
+ * @classdesc
+ */
+
+
 const SingleMovie = () => {
-    const { id } = useParams();
-    const {isLoading, error, data} = useFetch(`&i=${id}`);
-    const [trailerUrl, setTrailerUrl] = useState('');
-    const [modalIsOpen, setModalIsOpen] = useState(false);
-    const [message, setMessage] = useState('');
-    const [showModal, setShowModal] = useState(false);
-    const {navigate} = useNavigate();
+    const { id } = useParams(); //Obtener el id de la película de la URL
+    const {isLoading, error, data} = useFetch(`&i=${id}`); //Obtener la información de la película usando el id
+    const [trailerUrl, setTrailerUrl] = useState(''); //Estado inicial del tráiler de la película
+    const [modalIsOpen, setModalIsOpen] = useState(false); //Estado inicial del modal del tráiler
+    const [message, setMessage] = useState(''); //Estado inicial del mensaje
+    const [showModal, setShowModal] = useState(false); //Estado inicial del modal de mensajes
+    const {navigate} = useNavigate(); //Navegación entre páginas
 
     
-
-    let image, Title, Poster, Plot, Actors, Year, Country, Director, Released, Runtime, Type, Genre, imdbRating;
-
-    if (data) {
+    //Variables que se obtienen de la información de la película
+    let image, Title, Poster, Plot, Actors, Year, Country, Director, Released, Runtime, Type, Genre, imdbRating; 
+    
+    //Si existe la información de la película, se asigna a las variables
+    if (data) { 
         ({ Poster, Title, Plot, Actors, Year, Country, Director, Released, Runtime, Type, Genre, imdbRating } = data);
         image = Poster === "N/A" ? DefaultImage : Poster;
     }
 
-    //Insertar video Youtubea
+    //Insertar video Youtube
+    
     useEffect(() => {
         if (Title) {
             axios.get(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${Title}+trailer&key=AIzaSyCUbf6t18N92UgKfhyoLbxc979R9F9DCjI`)
@@ -56,34 +64,38 @@ const SingleMovie = () => {
     }
 
     //Agregar favoritos, mensaje proviene de server.js
+    
     const addToFavorites = () => {
         const token = localStorage.getItem('sessionToken'); // Obtener el token de sesión del almacenamiento local
-        axios.get(`http://localhost:5000/addmovie/${Title}`, { 
-          withCredentials: true,
-          headers: {
-            'Authorization': `Bearer ${token}` // incluir el token de sesión en la cabecera de la solicitud
+        
+        axios.get(`http://localhost:5000/addmovie/${Title}`, {  //Solicitud get a /addmovie
+          withCredentials: true, //Verificar estado del usuario si ha iniciado sesión
+          headers: { 
+            'Authorization': `Bearer ${token}` 
           } 
         })
         .then(response => {
-          console.log(response.data);
-          setMessage(response.data.message);
-          setShowModal(true);
-          setTimeout(() => {
-            setMessage('');
-            setShowModal(false);
-          }, 2000); // Cerrar el modal después de 3 segundos - se puede modificar para que dure menos
+          console.log(response.data); // Mostrar la respuesta en la consola
+          setMessage(response.data.message); // Mostrar el mensaje que viene en la respuesta
+          setShowModal(true); // Mostrar el modal
+          setTimeout(() => { // Cerrar el modal después de 2 segundos
+            setMessage(''); // Limpiar el mensaje
+            setShowModal(false); // Ocultar el modal
+          }, 2000); // Cerrar el modal después de 2 segundos - se puede modificar para que dure menos
         })
         .catch(error => {
           console.error(error);
           if (error.response) {
             if (error.response.status === 401) {
               setMessage('Para agregar a favoritos debe iniciar sesión');
-              // Antes de redirigir al usuario a la página de inicio de sesión
-              localStorage.setItem('prevPath', window.location.pathname);
+              
+              localStorage.setItem('prevPath', window.location.pathname); // Guardar la ruta previa en el almacenamiento local
+              
               // Redirige al usuario a la página de inicio de sesión después de 3 segundos
               setTimeout(() => {
                 navigate('/login');
               }, 3000);
+
             } else if (error.response.status === 400) {
               setMessage(error.response.data.message); // Mostrar el mensaje de error que viene en la respuesta
             } else {
@@ -92,10 +104,10 @@ const SingleMovie = () => {
           } else {
             setMessage('Hubo un error al añadir la película a favoritos');
           }
-          setShowModal(true);
-          setTimeout(() => {
-            setMessage('');
-            setShowModal(false);
+          setShowModal(true); // Mostrar el modal
+          setTimeout(() => { // Cerrar el modal después de 3 segundos
+            setMessage(''); // Limpiar el mensaje
+            setShowModal(false); // Ocultar el modal
           }, 3000); // Cerrar el modal después de 3 segundos
         });
     }
@@ -104,8 +116,8 @@ const SingleMovie = () => {
     const disqusConfig = {
         shortname: 'cinegurucl',   //Cuenta creada en la página de disqus, se guardará la info en sus servidores
         config: {
-            identifier: id, 
-            title: Title,  
+            identifier: id,  //Identificador único de la página
+            title: Title,  //Título de la página
         },
     };
 
@@ -230,9 +242,9 @@ const SingleMovie = () => {
         
             <div style={{ 
                 marginTop: '20px', 
-                marginLeft: 'auto', // Centra el componente horizontalmente
+                marginLeft: 'auto', 
                 marginRight: 'auto',
-                width: '77%', // ancho del componente
+                width: '77%', 
                 padding: '50px',
                 backgroundColor: 'rgba(255, 255, 255, 0.9)',
                 borderRadius: '20px'

@@ -2,23 +2,29 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 
+/**
+ Esta es la página de registro.
+ @classdesc
+*/
+
 function RegisterPage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [email, setEmail] = useState('');
-  const navigate = useNavigate();
+  const [username, setUsername] = useState(''); //Estado inicial de usuario
+  const [password, setPassword] = useState(''); //Estado inicial de contraseña
+  const [email, setEmail] = useState(''); //Estado inicial de email
+  const navigate = useNavigate(); //  Navegación entre páginas
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  const handleSubmit = (event) => { //Función que se ejecuta cuando el usuario envia el formulario
+    event.preventDefault(); //Prevenir que el formulario se envie por defecto
 
-    if (!username || !password || !email) {
+    if (!username || !password || !email) { //Validar que los campos no estén vacíos
       alert('Debe ingresar datos válidos');
       return;
     }
 
-    axios.post('http://localhost:5000/register', { username, password, email })
+    axios.post('http://localhost:5000/register', { username, password, email }) //Solicitud post a /register
       .then((response) => {
         console.log(response.data);
+        alert('¡La cuenta se ha creado con éxito!'); 
         navigate('/inicio_sesion'); // Redirige al usuario a la página de inicio de sesión después de registrarse
       })
       .catch((error) => {

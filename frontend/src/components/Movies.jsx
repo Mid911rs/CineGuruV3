@@ -1,9 +1,15 @@
+//Componente que muestra la lista de películas
+
 import { useContext } from "react";
 import { DataContext } from "../context/DataContext";
 import ItemMovie from "./ItemMovie";
 
+/**
+ * @classdesc Componente que muestra la lista de películas
+ */
+
 const Movies = () => {
-    const { isLoading, data } = useContext(DataContext);
+    const { isLoading, data } = useContext(DataContext); //Obtener data y estado de carga del contexto
 
     if (isLoading) {
         return <div className="loading">Cargando...</div>;

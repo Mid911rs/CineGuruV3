@@ -3,21 +3,28 @@ import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import UserContext from './UserContext';
 
+/**
+ * @classdesc Componente que muestra el formulario de inicio de sesión
+ */
+
 function LoginPage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const { setUser } = useContext(UserContext);
-  const navigate = useNavigate();
+  const [username, setUsername] = useState(''); //Estado inicial de usuario
+  const [password, setPassword] = useState(''); //Estado inicial de contraseña
+  const { setUser } = useContext(UserContext); //Obtener el usuario del contexto
+  const navigate = useNavigate(); //Navegación entre páginas
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  const handleSubmit = (event) => { //Función que se ejecuta cuando el usuario envia el formulario
+    event.preventDefault(); //Prevenir que el formulario se envie por defecto
 
-    axios.post('http://localhost:5000/inicio_sesion', { username, password }, { withCredentials: true })
+    axios.post('http://localhost:5000/inicio_sesion', { username, password }, { withCredentials: true }) 
+                                                                      //Solicitud post a /inicio_sesion
       .then((response) => {
         console.log(response);
         setUser(response.data.user);
-        const prevPath = localStorage.getItem('prevPath');
-        if (prevPath) {
+
+        const prevPath = localStorage.getItem('prevPath'); //Obtener la ruta previa
+
+        if (prevPath) { //Si existe una ruta previa, redirigir a esa ruta
           navigate(prevPath);
           localStorage.removeItem('prevPath');
         } else {

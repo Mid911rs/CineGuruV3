@@ -1,3 +1,4 @@
+// Librerías
 const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
@@ -8,23 +9,49 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const util = require('util');
 
+/**
+ * Este archivo contiene el código del servidor de la aplicación.
+ */
 
 const app = express();
 
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
-app.use(express.json());
-app.use(session({ secret: 'cineguruclinacap', resave: false, saveUninitialized: false }));
-app.use(passport.initialize());
-app.use(passport.session());
+//Middleware
+
+app.use(cors({ origin: 'http://localhost:3000', credentials: true })); // permitir solicitudes desde el frontend en el puerto 3000
+
+app.use(express.json()); // permitir que Express entienda JSON
+
+app.use(session({ secret: 'cineguruclinacap', resave: false, saveUninitialized: false })); // configurar sesión de Express con secret y opciones de resave y saveUninitialized
+
+app.use(passport.initialize()); // inicializar el módulo de autenticación
+
+app.use(passport.session()); // habilitar la persistencia de la sesión de autenticación
+
+
+//Datos de conexión
+
+//Conexión local a base de datos
 
 const db = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'orochi100',
+  database: 'peliculas'
+})
+
+//Conexion a base de datos en la nube en AWS
+
+/*const db = mysql.createConnection({
     host: 'peliculas.cwdpxvu8db9d.us-east-2.rds.amazonaws.com',
     user: 'cineguru',
     password: 'inacap2023',
     database: 'peliculas'
-});
+});*/
 
-db.connect((err) => {
+
+// Confirmación de conexión a la base de datos
+
+db.connect((err) => { 
   if (err) {
       console.error('Error al conectar a la base de datos:', err);
       throw err;
@@ -34,105 +61,31 @@ db.connect((err) => {
 
 
 
-//Registro y verificación de usuario
-
-passport.use(new LocalStrategy(
-  function(username, password, done) {
-    console.log('Autenticando usuario:', username); // Agrega esto
-    db.query('SELECT * FROM usuarios WHERE usuario_nombre = ?', [username], function(err, results, fields) {
-      if (err) { 
-        console.log('Error al buscar usuario:', err); // Agrega esto
-        done(err);
-      }
-
-      if (results.length === 0) {
-        console.log('Usuario no encontrado:', username); // Agrega esto
-        done(null, false);
-      } else {
-        const user = results[0];
-        console.log('Usuario encontrado:', user); // Agrega esto
-
-        if (user.usuario_contraseña === password) {
-          console.log('Contraseña correcta para usuario:', username); // Agrega esto
-          return done(null, user);
-        } else {
-          console.log('Contraseña incorrecta para usuario:', username); // Agrega esto
-          return done(null, false);
-        }
-      }
-    });
-  }
-));
+/*////////////////////////////////////////////////////////////////////////////////*/
+/*INICIO DE SESION*/
 
 // Ruta para registrar a un nuevo usuario
-app.post('/register', function(req, res) {
-  const { username, email, password } = req.body;
 
-  // Guardar el nuevo usuario en la base de datos
-  db.query('INSERT INTO usuarios (usuario_nombre, usuario_email, usuario_contraseña) VALUES (?, ?, ?)', [username, email, password], function(err, results) {
-      if (err) {
-          console.error(err);
-          res.status(500).json({ message: 'Error al insertar el nuevo usuario en la base de datos' });
-          return;
+app.post('/register', function(req, res) { // configurar la ruta para registrar a un nuevo usuario
+  const { username, email, password } = req.body; // extraer los datos del cuerpo de la solicitud
+
+  // insertar el nuevo usuario en la base de datos
+  //Se utilizan consultas parametrizadas para evitar la inyección de SQL, ya que los datos de la solicitud se pasan como parámetros
+  db.query('INSERT INTO usuarios (usuario_nombre, usuario_email, usuario_contraseña) VALUES (?, ?, ?)', [username, email, password], function(err, results) { 
+    if (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Error al insertar el nuevo usuario en la base de datos' });
+      return;
       }
 
       res.json({ message: 'Usuario registrado correctamente' });
-  });
-});
-
-
-//Restringir acceso de usuarios no registrados a favoritos
-
-function ensureAuthenticated(req, res, next) {
-  if (req.isAuthenticated()) {
-    return next();
-  } else {
-    // En lugar de redirigir, devolver un código de estado 401 y un mensaje
-    return res.status(401).json({ message: 'Para agregar a favoritos debes iniciar sesión.' });
-  }
-}
-
-db.query = util.promisify(db.query);
-
-
-//Insertar en favoritos usuarios registrados
-
-app.post('/addmovie', ensureAuthenticated, async (req, res) => {
-  const userId = req.user.usuario_id;
-  const movieTitle = req.body.title;
-
-  if (!movieTitle) {
-    res.status(400).json({ message: 'El título de la película no puede ser nulo' });
-    return;
-  }
-
-  try {
-    let query = 'SELECT * FROM peliculas WHERE pelicula_titulo = ?';
-    let result = await db.query(query, [movieTitle]);
-    let movieId;
-
-    if(result.length > 0) {
-        movieId = result[0].pelicula_id;
-    } else {
-        query = `INSERT INTO peliculas (pelicula_titulo) VALUES (?)`;
-        result = await db.query(query, [movieTitle]);
-        movieId = result.insertId;
-    }
-
-    query = `INSERT INTO favoritos (pelicula_id, usuario_id) VALUES (?, ?)`;
-    await db.query(query, [movieId, userId]);
-
-    res.json({ message: 'Película añadida correctamente a tus favoritos' });
-  } catch(err) {
-    console.error(err);
-    res.status(500).json({ message: 'Hubo un error al añadir la película a favoritos' });
-  }
+    });
 });
 
 
 // Ruta para iniciar sesión
 
-app.post('/inicio_sesion', function(req, res, next) {
+app.post('/inicio_sesion', function(req, res, next) { 
   passport.authenticate('local', function(err, user, info) {
     if (err) { 
       return next(err); 
@@ -150,7 +103,40 @@ app.post('/inicio_sesion', function(req, res, next) {
 });
 
 
+//Registro y verificación de usuario
+
+passport.use(new LocalStrategy( // configurar el módulo de autenticación para usar el método de autenticación local
+  function(username, password, done) {
+    console.log('Autenticando usuario:', username); 
+
+    db.query('SELECT * FROM usuarios WHERE usuario_nombre = ?', [username], function(err, results, fields) { // buscar el usuario en la base de datos
+      if (err) { 
+        console.log('Error al buscar usuario:', err); 
+        done(err);
+      }
+
+      if (results.length === 0) { // si no se encuentra el usuario, devolver false
+        console.log('Usuario no encontrado:', username); 
+        done(null, false);
+      } else {
+        const user = results[0];
+        console.log('Usuario encontrado:', user);
+
+        if (user.usuario_contraseña === password) { // si se encuentra el usuario, verificar la contraseña
+          console.log('Contraseña correcta para usuario:', username); 
+          return done(null, user);
+        } else {
+          console.log('Contraseña incorrecta para usuario:', username); 
+          return done(null, false);
+        }
+      }
+    });
+  }
+));
+
+
 //Cerrar sesión
+
 app.get('/logout', (req, res) => {
     req.logout(err => {
       if (err) {
@@ -161,8 +147,11 @@ app.get('/logout', (req, res) => {
       }
     });
   });
+
+  
   
 //Autenticar usuarios  
+
 passport.serializeUser(function(user, done) {
     done(null, user.usuario_id);
   });
@@ -177,6 +166,46 @@ passport.deserializeUser(function(id, done) {
       }
     });
   });
+
+
+
+
+/*/////////////////////////////////////////////////////////////////////////////////////*/
+/*FAVORITOS*/
+
+//Insertar en favoritos - usuarios registrados
+
+app.post('/addmovie', ensureAuthenticated, async (req, res) => {  
+  const userId = req.user.usuario_id; 
+  const movieTitle = req.body.title;
+
+  if (!movieTitle) { //
+    res.status(400).json({ message: 'El título de la película no puede ser nulo' });
+    return;
+  }
+
+  try {
+    let query = 'SELECT * FROM peliculas WHERE pelicula_titulo = ?';
+    let result = await db.query(query, [movieTitle]);
+    let movieId;
+
+    if(result.length > 0) { 
+        movieId = result[0].pelicula_id;
+    } else {
+        query = `INSERT INTO peliculas (pelicula_titulo) VALUES (?)`;
+        result = await db.query(query, [movieTitle]);
+        movieId = result.insertId;
+    }
+
+    query = `INSERT INTO favoritos (pelicula_id, usuario_id) VALUES (?, ?)`;
+    await db.query(query, [movieId, userId]);
+
+    res.json({ message: 'Película añadida correctamente a tus favoritos' });
+  } catch(err) {
+    console.error(err);
+    res.status(500).json({ message: 'Hubo un error al añadir la película a favoritos' });
+  }
+});
 
 
 //Insertar en favoritos
@@ -212,6 +241,45 @@ app.get('/addmovie/:title', ensureAuthenticated, async (req, res) => {
   }
 });
 
+//Añadir a favoritos segun pelicula_id
+
+app.post('/favoritos/:pelicula_id', (req, res) => {
+  // Revisar que usuario este autenticado
+  if (!req.user) {
+    return res.status(401).json({ message: 'Por favor, inicia sesión para marcar una película como favorita' });
+  }
+
+  // consulta SQL
+  const sql = `
+  INSERT INTO favoritos (usuario_id, pelicula_id) 
+  VALUES (?, ?)
+  `;
+
+  // ejecutar la consulta
+  db.query(sql, [req.user.usuario_id, req.params.pelicula_id], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: 'Error al marcar la película como favorita' });
+    }
+
+    // devolver un mensaje de éxito en la respuesta
+    res.json({ message: 'Película marcada como favorita con éxito' });
+  });
+});
+
+
+// Eliminar una película favorita
+
+app.delete('/favoritos/:pelicula_id', ensureAuthenticated, (req, res) => {
+let query = `DELETE FROM favoritos WHERE pelicula_id = ? AND usuario_id = ?`;
+db.query(query, [req.params.pelicula_id, req.user.usuario_id], (err, result) => {
+    if(err) {
+        throw err;
+    }
+    res.send('Película eliminada correctamente de favoritos');
+});
+});
+
 
 //Ver lista de favoritos
 
@@ -242,45 +310,21 @@ app.get('/favoritos', (req, res) => {
 });
 
 
-//Añadir a favoritos segun pelicula_id
+//Restringir acceso de usuarios no registrados a favoritos
 
-app.post('/favoritos/:pelicula_id', (req, res) => {
-    // Revisar que usuario este autenticado
-    if (!req.user) {
-      return res.status(401).json({ message: 'Por favor, inicia sesión para marcar una película como favorita' });
-    }
-  
-    // consulta SQL
-    const sql = `
-    INSERT INTO favoritos (usuario_id, pelicula_id) 
-    VALUES (?, ?)
-    `;
-  
-    // ejecutar la consulta
-    db.query(sql, [req.user.usuario_id, req.params.pelicula_id], (err, results) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ message: 'Error al marcar la película como favorita' });
-      }
+function ensureAuthenticated(req, res, next) { //
+  if (req.isAuthenticated()) { // si el usuario está autenticado, continuar
+    return next();
+  } else {
+    // En lugar de redirigir, devolver un código de estado 401 y un mensaje
+    return res.status(401).json({ message: 'Para agregar a favoritos debes iniciar sesión.' });
+  }
+}
 
-      // devolver un mensaje de éxito en la respuesta
-      res.json({ message: 'Película marcada como favorita con éxito' });
-    });
-});
+db.query = util.promisify(db.query); // convertir db.query en una función que devuelve una promesa (No recuerdo si se está usando...)
 
 
-// Eliminar una película favorita
-
-app.delete('/favoritos/:pelicula_id', ensureAuthenticated, (req, res) => {
-  let query = `DELETE FROM favoritos WHERE pelicula_id = ? AND usuario_id = ?`;
-  db.query(query, [req.params.pelicula_id, req.user.usuario_id], (err, result) => {
-      if(err) {
-          throw err;
-      }
-      res.send('Película eliminada correctamente de favoritos');
-  });
-});
-
+/*///////////////////////////////////////////////////////////////////////////////////////*/
 
 //Conexión establecida
 

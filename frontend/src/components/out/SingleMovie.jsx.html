@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: SingleMovie.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: SingleMovie.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import { useFetch } from "../hooks/useFetch";
+import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import axios from 'axios';
+import ReactPlayer from 'react-player/youtube';
+import Modal from 'react-modal';
+import { DiscussionEmbed } from 'disqus-react';
+import { useNavigate } from 'react-router-dom';
+import { FacebookShareButton, TwitterShareButton, TelegramShareButton, WhatsappShareButton} from 'react-share';
+import Facebook from 'bootstrap-icons/icons/facebook.svg';
+import Twitter from 'bootstrap-icons/icons/twitter.svg';
+import WhatsApp from 'bootstrap-icons/icons/whatsapp.svg';
+import Telegram from 'bootstrap-icons/icons/telegram.svg';
+
+import DefaultImage from "/NoImage.png"
+
+/**
+ * Página de información de película.
+ * @classdesc
+ */
+
+
+const SingleMovie = () => {
+    const { id } = useParams(); //Obtener el id de la película de la URL
+    const {isLoading, error, data} = useFetch(`&amp;i=${id}`); //Obtener la información de la película usando el id
+    const [trailerUrl, setTrailerUrl] = useState(''); //Estado inicial del tráiler de la película
+    const [modalIsOpen, setModalIsOpen] = useState(false); //Estado inicial del modal del tráiler
+    const [message, setMessage] = useState(''); //Estado inicial del mensaje
+    const [showModal, setShowModal] = useState(false); //Estado inicial del modal de mensajes
+    const {navigate} = useNavigate(); //Navegación entre páginas
+
+    
+    //Variables que se obtienen de la información de la película
+    let image, Title, Poster, Plot, Actors, Year, Country, Director, Released, Runtime, Type, Genre, imdbRating; 
+    
+    //Si existe la información de la película, se asigna a las variables
+    if (data) { 
+        ({ Poster, Title, Plot, Actors, Year, Country, Director, Released, Runtime, Type, Genre, imdbRating } = data);
+        image = Poster === "N/A" ? DefaultImage : Poster;
+    }
+
+    //Insertar video Youtube
+    
+    useEffect(() => {
+        if (Title) {
+            axios.get(`https://www.googleapis.com/youtube/v3/search?part=snippet&amp;q=${Title}+trailer&amp;key=AIzaSyCUbf6t18N92UgKfhyoLbxc979R9F9DCjI`)
+                .then(res => {
+                    if (res.data.items.length > 0) {
+                        setTrailerUrl(`https://www.youtube.com/watch?v=${res.data.items[0].id.videoId}`);
+                    } else {
+                        console.log('No se encontró el tráiler de la película');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                });
+        }
+    }, [Title]);
+
+    //Simbolo de carga
+
+    if (isLoading) {
+        return &lt;div className="loading">&lt;/div>;
+    }
+
+    //Agregar favoritos, mensaje proviene de server.js
+    
+    const addToFavorites = () => {
+        const token = localStorage.getItem('sessionToken'); // Obtener el token de sesión del almacenamiento local
+        
+        axios.get(`http://localhost:5000/addmovie/${Title}`, {  //Solicitud get a /addmovie
+          withCredentials: true, //Verificar estado del usuario si ha iniciado sesión
+          headers: { 
+            'Authorization': `Bearer ${token}` 
+          } 
+        })
+        .then(response => {
+          console.log(response.data); // Mostrar la respuesta en la consola
+          setMessage(response.data.message); // Mostrar el mensaje que viene en la respuesta
+          setShowModal(true); // Mostrar el modal
+          setTimeout(() => { // Cerrar el modal después de 2 segundos
+            setMessage(''); // Limpiar el mensaje
+            setShowModal(false); // Ocultar el modal
+          }, 2000); // Cerrar el modal después de 2 segundos - se puede modificar para que dure menos
+        })
+        .catch(error => {
+          console.error(error);
+          if (error.response) {
+            if (error.response.status === 401) {
+              setMessage('Para agregar a favoritos debe iniciar sesión');
+              
+              localStorage.setItem('prevPath', window.location.pathname); // Guardar la ruta previa en el almacenamiento local
+              
+              // Redirige al usuario a la página de inicio de sesión después de 3 segundos
+              setTimeout(() => {
+                navigate('/login');
+              }, 3000);
+
+            } else if (error.response.status === 400) {
+              setMessage(error.response.data.message); // Mostrar el mensaje de error que viene en la respuesta
+            } else {
+              setMessage('Hubo un error al añadir la película a favoritos');
+            }
+          } else {
+            setMessage('Hubo un error al añadir la película a favoritos');
+          }
+          setShowModal(true); // Mostrar el modal
+          setTimeout(() => { // Cerrar el modal después de 3 segundos
+            setMessage(''); // Limpiar el mensaje
+            setShowModal(false); // Ocultar el modal
+          }, 3000); // Cerrar el modal después de 3 segundos
+        });
+    }
+
+    //Inserción de DISQUS
+    const disqusConfig = {
+        shortname: 'cinegurucl',   //Cuenta creada en la página de disqus, se guardará la info en sus servidores
+        config: {
+            identifier: id,  //Identificador único de la página
+            title: Title,  //Título de la página
+        },
+    };
+
+    //Compartir en redes sociales información de la película, obtiene la URL de la página
+    const shareUrl = window.location.href;
+
+
+    //En return, REACT PLAYER contiene el video de Youtube, el botón que está justo debajo es el botón para cerrar video
+    //tiene estilo básico (rojo con letras blancas, se puede modificar)
+    //El primer MODAL corresponde al estilo de los mensajes popup que aparecen al agregar a favoritos
+
+    return ( 
+        !isLoading ?
+        &lt;div>
+            &lt;div className="single-movie">
+                &lt;img src={image} alt={Title} />
+                &lt;div className="single-info">
+                &lt;h2>{ Title }&lt;/h2>
+
+                &lt;button onClick={addToFavorites}className="add-fav-button">Agregar a favoritos&lt;/button>
+
+                &lt;button onClick={() => setModalIsOpen(true)}className="trailer-button">Reproducir tráiler&lt;/button>
+
+                &lt;div className="contenedor_redes">
+
+                    &lt;FacebookShareButton url={shareUrl} style={{ margin: '10px' }}>
+                        &lt;img src={Facebook} className="hover_facebook" alt="Facebook" style={{ width: '50px', height: '50px' }} />
+                    &lt;/FacebookShareButton>
+
+                    &lt;TwitterShareButton url={shareUrl} style={{ margin: '10px' }}>
+                        &lt;img src={Twitter} className="hover_twitter" alt="Facebook" style={{ width: '50px', height: '50px' }} />
+                    &lt;/TwitterShareButton>
+
+                    &lt;WhatsappShareButton url={shareUrl} style={{ margin: '10px' }}>
+                        &lt;img src={WhatsApp} className="hover_whatsapp" alt="Facebook" style={{ width: '50px', height: '50px' }} />
+                    &lt;/WhatsappShareButton>
+                    
+                    &lt;TelegramShareButton url={shareUrl} style={{ margin: '10px' }}>
+                        &lt;img src={Telegram} className="hover_telegram" alt="Facebook" style={{ width: '50px', height: '50px' }} />
+                    &lt;/TelegramShareButton>
+
+                &lt;/div>
+                
+                &lt;p> { Plot }&lt;/p>
+                &lt;p>&lt;strong>Actores principales: &lt;/strong>{ Actors }&lt;/p>
+                &lt;p>&lt;strong>País: &lt;/strong>{ Country }&lt;/p>
+                &lt;p>&lt;strong>Director: &lt;/strong>{ Director }&lt;/p>
+                &lt;p>&lt;strong>Fecha de estreno: &lt;/strong>{ Released }&lt;/p>
+                &lt;p>&lt;strong>Duración: &lt;/strong>{ Runtime }&lt;/p>
+                &lt;p>&lt;strong>Año: &lt;/strong>{ Year }&lt;/p>
+                &lt;p>&lt;strong>Tipo: &lt;/strong>{ Type }&lt;/p>
+                &lt;p>&lt;strong>Género: &lt;/strong>{ Genre }&lt;/p>
+                &lt;p>&lt;strong>Rating imdb: &lt;/strong>{ imdbRating }&lt;/p>
+                
+                {showModal &amp;&amp; 
+                    &lt;div style={{
+                        position: 'fixed',
+                        top: '0',
+                        left: '0',
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        zIndex: 1000
+                    }}>
+                        &lt;div style={{
+                            backgroundColor: 'white',
+                            padding: '10px',
+                            borderRadius: '10px'
+                        }}>
+                            &lt;p>{message}&lt;/p>
+                        &lt;/div>
+                    &lt;/div>
+                }
+        
+                
+                &lt;/div>
+            &lt;/div>
+    
+            &lt;Modal 
+                isOpen={modalIsOpen}
+                onRequestClose={() => setModalIsOpen(false)}
+                contentLabel="Tráiler"
+                ariaHideApp={false}
+                style={{
+                    overlay: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.75)'
+                    },
+                    content: {
+                        color: 'lightsteelblue',
+                        height: '80%',
+                        width: '60%',
+                        marginLeft: '20%',
+                        marginTop: '1%',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        position: 'relative'
+                    }
+                }}
+                >
+                    
+                    {trailerUrl &amp;&amp; &lt;ReactPlayer url={trailerUrl} playing width='100%' height='100%' />}
+                    &lt;button onClick={() => setModalIsOpen(false)}
+                        style={{
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            background: 'red',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            fontSize: '1.2em',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        X
+                    &lt;/button>
+            &lt;/Modal>
+        
+            &lt;div style={{ 
+                marginTop: '20px', 
+                marginLeft: 'auto', 
+                marginRight: 'auto',
+                width: '77%', 
+                padding: '50px',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                borderRadius: '20px'
+                
+            }}>
+                &lt;DiscussionEmbed {...disqusConfig} />
+            &lt;/div>
+            
+        &lt;/div> : null
+    );
+}
+
+export default SingleMovie; 
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#SingleMovie">SingleMovie</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Wed Dec 13 2023 10:27:08 GMT-0300 (hora de verano de Chile)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

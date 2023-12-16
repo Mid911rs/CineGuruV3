@@ -1,15 +1,22 @@
+//Compartir datos de la API entre componentes
+
 import { createContext, useState, useEffect } from "react";
+
+/**
+ * @classdesc Contexto de datos
+ */
 
 export const DataContext = createContext();
 
+//Esta función permite que cualquier compoenente hijo acceda al data context
 export const DataProvider = ({ children }) => { 
-    const [params, setParams] = useState(''); 
-    const [data, setData] = useState([]); 
-    const [isLoading, setIsLoading] = useState(false); 
-    const [error, setError] = useState(null);
+    const [params, setParams] = useState(''); //Estado inicial de la búsqueda
+    const [data, setData] = useState([]); //Estado inicial de la data
+    const [isLoading, setIsLoading] = useState(false); //Estado inicial de la carga
+    const [error, setError] = useState(null); //Estado inicial de error
 
-useEffect(() => {
-    const search = async () => {
+useEffect(() => { //useEffect se ejecuta después de cada renderizado, cambiar con cada busqueda en la api
+    const search = async () => {    //Función asincrona para buscar en la api
         setIsLoading(true);
         setError(null);
         try {
@@ -25,12 +32,13 @@ useEffect(() => {
         }
         setIsLoading(false);
     };
-    if (params !== '') {
+    if (params !== '') { //Si el parámetro de busqueda no está vacio, se ejecuta la búsqueda
         search();
     }
-}, [params]);
+}, [params]); //Se ejecuta cada vez que cambia el parámetro de busqueda
 
-return (
+
+return (        //Retorna el data context, cualquier componente hijo puede acceder a estos datos
     <DataContext.Provider value={{ data, setData, params, setParams, isLoading, error }}>
         {children}
     </DataContext.Provider>

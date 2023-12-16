@@ -2,12 +2,19 @@ import { useContext, useState } from "react";
 import { DataContext } from "../context/DataContext";
 import { Link } from 'react-router-dom';
 
-const FormSearch = () => { const [title, setTitle] = useState(''); 
-const { setParams, error } = useContext(DataContext);
+/**
+ * @classdesc Componente que muestra el formulario de búsqueda principal
+ */
 
-const handleSubmit = (e) => {
-    e.preventDefault();
-    if (title.trim() !== '') { 
+const FormSearch = () => { 
+
+    const [title, setTitle] = useState(''); //Estado inicial del título de la película, barra busqueda principal
+    const { setParams, error } = useContext(DataContext); //Obtener los parámetros de búsqueda del contexto
+
+const handleSubmit = (e) => { //Función que se ejecuta cuando el usuario envia la búsqueda
+    e.preventDefault(); //Prevenir que el formulario se envie por defecto
+
+    if (title.trim() !== '') { //Si el título no está vacío
         setParams(title);
     }
 }
@@ -23,7 +30,7 @@ return (
         
         <form onSubmit={ handleSubmit }>
             <input type="text" placeholder="Nombre de la película" onChange={e=>setTitle(e.target.value)}/>
-            <input type="submit" value="Buscar" />
+            <input className="buscar_main" type="submit" value="Buscar" />
         </form>
         { error === true && <p className="error">No se encuentra esta película </p> }
     </div>
